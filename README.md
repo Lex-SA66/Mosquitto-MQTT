@@ -44,7 +44,7 @@ sudo systemctl start mosquitto
 
 ```
 
-2. Prueba Básica del Broker (Local)
+### 2. Prueba Básica del Broker (Local)
 Para validar el funcionamiento del broker, se abrieron dos sesiones de terminal simultáneas en el servidor:
 
 Terminal 1 (Subscriber):
@@ -56,9 +56,7 @@ mosquitto_sub -h localhost -t "sismo/alerta"
 
 Terminal 2 (Publisher):
 
-```bash
 Se envió un mensaje simulando una alerta.
-```
 
 ```bash
 mosquitto_pub -h localhost -t "sismo/alerta" -m "SISTEMA OPERATIVO"
@@ -66,7 +64,7 @@ mosquitto_pub -h localhost -t "sismo/alerta" -m "SISTEMA OPERATIVO"
 
 Resultado: El mensaje "SISTEMA OPERATIVO" apareció instantáneamente en la Terminal 1, confirmando la operatividad del broker local.
 
-3. Configuración del Publisher en ESP32
+### 3. Configuración del Publisher en ESP32
 Se utilizó Arduino IDE para la programación del firmware.
 
 Se instalaron las librerías PubSubClient (para MQTT) y Wire (para la comunicación I2C con el sensor MPU6050).
@@ -81,15 +79,15 @@ sismo/alerta: Envío del payload "PELIGRO" únicamente al detectar más de 8 osc
 
 (El código fuente se encuentra en la ruta codigo_esp32/sismografo_esp32.ino).
 
-Evidencias de Funcionamiento
-A. Instalación y Estado del Broker Mosquitto
+## Evidencias de Funcionamiento
+### A. Instalación y Estado del Broker Mosquitto
 Comprobación del servicio corriendo en el sistema Linux.
 
-B. Prueba Básica de Mensajería (Publisher / Subscriber local)
+### B. Prueba Básica de Mensajería (Publisher / Subscriber local)
 Validación de transmisión de datos en la misma placa utilizando comandos de consola.
 
-C. Ejecución del Publisher (Logs del ESP32)
+### C. Ejecución del Publisher (Logs del ESP32)
 Monitor Serial mostrando la conexión asíncrona exitosa y el reconocimiento del algoritmo de sismos.
 
-D. Interfaz de Suscriptor Final (Dashboard Web)
+### D. Interfaz de Suscriptor Final (Dashboard Web)
 Recepción e interpretación visual de la telemetría en tiempo real, procesando los tópicos enviados por el ESP32.

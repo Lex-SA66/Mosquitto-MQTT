@@ -1,0 +1,14 @@
+# Archivos de compilación de Arduino
+*.elf
+*.hex
+*.bin
+*.map
+build/
+
+# Entorno de Sistema Operativo
+.DS_Store
+Thumbs.db
+
+# Configuraciones de VS Code / PlatformIO
+.vscode/
+.pio/

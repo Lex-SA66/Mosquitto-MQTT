@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sismógrafo IoT - Registro Digital</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+        body { background-color: #050505; color: #00ff41; font-family: 'Courier New', monospace; text-align: center; margin: 0; padding: 20px; }
+        .contenedor { border: 2px solid #00ff41; background: #000; padding: 20px; display: inline-block; width: 90%; max-width: 1000px; box-shadow: 0 0 25px rgba(0,255,65,0.3); }
+        .alerta { background: #ff0000; color: white; padding: 15px; font-size: 28px; font-weight: bold; display: none; margin-top: 15px; border-radius: 5px; animation: parpadeo 0.3s infinite; }
+        @keyframes parpadeo { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        #status { font-size: 14px; margin-bottom: 20px; color: #008f11; letter-spacing: 2px; }
+        button { background: #00ff41; color: black; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; margin: 10px; font-family: inherit; text-transform: uppercase; }
+        button:hover { background: #008f11; color: white; }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <h2 style="letter-spacing: 5px;">SISMOGRAMA DIGITAL EN TIEMPO REAL</h2>
+        <div id="status">ESTADO: ESPERANDO CONEXIÓN...</div>
+        <button id="btnInit">INICIALIZAR SENSORES Y AUDIO</button>
+        <div id="cajaAlerta" class="alerta">¡SISMICIDAD DETECTADA - PROTOCOLO DE ALERTA!</div>
+        <canvas id="graficaSismo"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('graficaSismo').getContext('2d');
+        let sismoChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(100).fill(''),
+                datasets: [{
+                    label: 'Aceleración Lineal X (m/s²)',
+                    borderColor: '#00ff41',
+                    borderWidth: 1.5,
+                    data: Array(100).fill(0),
+                    pointRadius: 0,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                animation: false,
+                scales: {
+                    y: { min: -8, max: 8, grid: { color: '#1a1a1a' }, ticks: { color: '#00ff41' } },
+                    x: { display: false }
+                },
+                plugins: { legend: { labels: { color: '#00ff41' } } }
+            }
+        });
+
+        let audioHabilitado = false;
+        let audioCtx;
+        document.getElementById('btnInit').onclick = () => {
+            audioHabilitado = true;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            document.getElementById('btnInit').style.display = 'none';
+        };
+
+        // SUSTITUYE "IP_DE_TU_ARDUINO" POR LA IP REAL
+        const client = new Paho.MQTT.Client("IP_DE_TU_ARDUINO", 9001, "webCli_" + Math.random());
+        
+        client.onMessageArrived = (msg) => {
+            if (msg.destinationName === "sismo/grafica") {
+                sismoChart.data.datasets[0].data.push(parseFloat(msg.payloadString));
+                sismoChart.data.datasets[0].data.shift();
+                sismoChart.update();
+            } else if (msg.destinationName === "sismo/alerta") {
+                document.getElementById('cajaAlerta').style.display = 'block';
+                setTimeout(() => { document.getElementById('cajaAlerta').style.display = 'none'; }, 4000);
+                if (audioHabilitado) {
+                    if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400]);
+                    let osc = audioCtx.createOscillator();
+                    osc.type = 'sawtooth';
+                    osc.connect(audioCtx.destination);
+                    osc.start(); osc.stop(audioCtx.currentTime + 1.2);
+                }
+            }
+        };
+
+        client.connect({ onSuccess: () => {
+            document.getElementById('status').innerText = "ESTADO: SISTEMA EN LÍNEA / RECIBIENDO TELEMETRÍA";
+            client.subscribe("sismo/grafica"); client.subscribe("sismo/alerta");
+        }});
+    </script>
+</body>
+</html>
